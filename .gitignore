@@ -1,0 +1,36 @@
+# ===== 密钥/环境变量（含真实 Key，禁止提交，用 .env.example 代替）=====
+.env
+**/.env
+!**/.env.example
+
+# ===== 依赖 / 构建产物 =====
+node_modules/
+**/node_modules/
+dist/
+dist-ssr/
+frontend/dist/
+build/
+
+# ===== Python 缓存 =====
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ===== DeepDOC / OCR 大模型（首次解析时自动从 hf-mirror 下载，无需提交）=====
+backend/app/service/core/rag/res/deepdoc/*.onnx
+backend/app/service/core/rag/res/deepdoc/*.model
+backend/app/service/core/rag/res/deepdoc/.cache/
+backend/app/service/core/rag/res/*.trie
+
+# ===== 教程视频（服务器用不到，太大）=====
+wsl启动rag项目/*.mp4
+
+# ===== 日志 / 系统文件 =====
+*.log
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

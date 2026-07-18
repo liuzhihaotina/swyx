@@ -1,0 +1,18 @@
+# 默认由 git 自动处理文本换行
+* text=auto
+
+# 这些脚本必须是 LF，否则在 Linux 服务器上会报 "bad interpreter" 无法执行
+*.sh text eol=lf
+start.sh text eol=lf
+
+# 二进制文件不做换行转换
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpg binary
+*.svg binary
+*.onnx binary
+*.model binary
+*.trie binary
+*.zip binary
+*.docx binary
