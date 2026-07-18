@@ -17,10 +17,11 @@ def get_chat_completion_block(session_id, question, references):
     """
     try:
         
-        # 初始化 OpenAI 客户端
+        # 初始化 OpenAI 客户端（对话 LLM，支持任意 OpenAI 兼容服务，
+        # 优先用 LLM_* 环境变量，未配置时回退到 DASHSCOPE_*）
         client = OpenAI(
-            api_key=os.getenv("DASHSCOPE_API_KEY"),
-            base_url=os.getenv("DASHSCOPE_BASE_URL")
+            api_key=os.getenv("LLM_API_KEY") or os.getenv("DASHSCOPE_API_KEY"),
+            base_url=os.getenv("LLM_BASE_URL") or os.getenv("DASHSCOPE_BASE_URL")
         )
         # 格式化参考内容
         formatted_references = "\n".join([f"[{ref['id']}] {ref['content']}" for ref in references])
@@ -28,12 +29,13 @@ def get_chat_completion_block(session_id, question, references):
         # 构造提示词
         
     
-        # 调用模型生成回答
+        # 调用模型生成回答（模型名从 .env 的 LLM_MODEL 读取）
         completion = client.chat.completions.create(
-            model="deepseek-r1",
+            model=os.getenv("LLM_MODEL", "deepseek-r1"),
             messages=[{"role": "user", "content": prompt}],
             stream=False,
         )
+
     
         return completion.choices[0].message.content
 
@@ -75,7 +77,8 @@ def rerank_similarity(query, texts):
 
 
 
-def generate_embedding(text: str | List[str], api_key: str = None, base_url: str = None, model_name: str = "text-embedding-v3", dimensions: int = 1024, encoding_format: str = "float", max_batch_size: int = 10):
+def generate_embedding(text: str | List[str], api_key: str = None, base_url: str = None, model_name: str = None, dimensions: int = 1024, encoding_format: str = "float", max_batch_size: int = 10):
+
     """
     生成文本的向量嵌入
     
@@ -91,14 +94,17 @@ def generate_embedding(text: str | List[str], api_key: str = None, base_url: str
     Returns:
         单个文本时返回向量，文本列表时返回向量列表
     """
-    api_key = os.getenv("DASHSCOPE_API_KEY")
-    base_url = os.getenv("DASHSCOPE_BASE_URL")    
+    # Embedding 服务：优先用 EMBEDDING_* 环境变量，未配置回退到 DASHSCOPE_*
+    api_key = os.getenv("EMBEDDING_API_KEY") or os.getenv("DASHSCOPE_API_KEY")
+    base_url = os.getenv("EMBEDDING_BASE_URL") or os.getenv("DASHSCOPE_BASE_URL")
+    model_name = model_name or os.getenv("EMBEDDING_MODEL", "text-embedding-v3")
 
     # 初始化 OpenAI 客户端
     client = OpenAI(
         api_key=api_key,
         base_url=base_url
     )
+
 
     # 如果是单个文本，直接处理
     if isinstance(text, str):

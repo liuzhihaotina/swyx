@@ -2,12 +2,18 @@ from elasticsearch import Elasticsearch
 from openai import OpenAI
 import jieba
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
+def generate_embedding(text: str, api_key: str = None, base_url: str = None, model_name: str = None, dimensions: int = 1024, encoding_format: str = "float"):
+    # 统一从环境变量读取，避免把密钥硬编码进代码
+    api_key = os.getenv("EMBEDDING_API_KEY") or os.getenv("DASHSCOPE_API_KEY")
+    base_url = os.getenv("EMBEDDING_BASE_URL") or os.getenv("DASHSCOPE_BASE_URL")
+    model_name = model_name or os.getenv("EMBEDDING_MODEL", "text-embedding-v3")
 
-def generate_embedding(text: str, api_key: str = None, base_url: str = None, model_name: str = "text-embedding-v3", dimensions: int = 1024, encoding_format: str = "float"):
-    api_key = "sk-f25b431f918a4796b65b1ae4a2c3ce56"
-    base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"    
 
     # 初始化 OpenAI 客户端
     client = OpenAI(

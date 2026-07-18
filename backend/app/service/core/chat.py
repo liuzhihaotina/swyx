@@ -85,11 +85,13 @@ def generate_recommended_questions(user_question, retrieved_content=None, sessio
     try:
         # 调用大模型生成推荐问题
         client = OpenAI(
-                api_key=os.getenv("DASHSCOPE_API_KEY"),
-                base_url=os.getenv("DASHSCOPE_BASE_URL")
+                api_key=os.getenv("LLM_API_KEY") or os.getenv("DASHSCOPE_API_KEY"),
+                base_url=os.getenv("LLM_BASE_URL") or os.getenv("DASHSCOPE_BASE_URL")
             )
+
         completion = client.chat.completions.create(
-            model="qwen2.5-7b-instruct",
+            model=os.getenv("LLM_MODEL", "qwen2.5-7b-instruct"),
+
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
             stream=False,
@@ -161,11 +163,13 @@ def generate_session_name(user_question):
     # 调用大模型生成会话名称
     try:
         client = OpenAI(
-                api_key=os.getenv("DASHSCOPE_API_KEY"),
-                base_url=os.getenv("DASHSCOPE_BASE_URL")
+                api_key=os.getenv("LLM_API_KEY") or os.getenv("DASHSCOPE_API_KEY"),
+                base_url=os.getenv("LLM_BASE_URL") or os.getenv("DASHSCOPE_BASE_URL")
             )
+
         completion = client.chat.completions.create(
-            model="qwen2.5-72b-instruct",
+            model=os.getenv("LLM_MODEL", "qwen2.5-72b-instruct"),
+
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
             stream=False,
@@ -344,20 +348,22 @@ def get_chat_completion(session_id, question, retrieved_content, user_id):
     print(prompt)
 
     try:
-        # 初始化 OpenAI 客户端
+        # 初始化 OpenAI 客户端（对话 LLM，支持任意 OpenAI 兼容服务）
         client = OpenAI(
-            api_key=os.getenv("DASHSCOPE_API_KEY"),
-            base_url=os.getenv("DASHSCOPE_BASE_URL")
+            api_key=os.getenv("LLM_API_KEY") or os.getenv("DASHSCOPE_API_KEY"),
+            base_url=os.getenv("LLM_BASE_URL") or os.getenv("DASHSCOPE_BASE_URL")
         )
 
-        # 创建聊天完成请求
+        # 创建聊天完成请求（模型名从 .env 的 LLM_MODEL 读取）
+
         completion = client.chat.completions.create(
-            model="deepseek-r1",  # 可按需更换模型名称
+            model=os.getenv("LLM_MODEL", "deepseek-r1"),
             messages=[
                 {"role": "user", "content": prompt}
             ],
             stream=True,
         )
+
 
         # 返回检索内容和快速解析内容
         all_documents = retrieved_content.copy() if retrieved_content else []
