@@ -2,10 +2,55 @@
 
 本仓库已针对 **2核4GiB** 云服务器做了内存优化，个人学习、仅跑 RAG 可直接 `git clone` 使用。
 
-> 说明：大模型（对话/embedding/rerank）都走阿里云 DashScope 云端 API，本地不做大模型推理。
+> 说明：语义类模型（对话/embedding/rerank）走云端 API，本地不做大模型推理。
 > DeepDOC 的 OCR/版面 ONNX 模型**未随仓库提交**，首次上传文档解析时会自动从 `hf-mirror.com` 下载（约 450MB，走服务器带宽）。
 
 ---
+
+## 〇、模型服务架构（本地 ONNX + 云端 API）
+
+系统的 AI 能力分两层，理解这个有助于你配置 Key 和排错：
+
+### 本地 ONNX 模型 —— “眼睛”，免费/离线
+负责**把文档读成文字**：OCR 文字检测识别、版面分析、表格结构识别。
+- 位置：`backend/app/service/core/rag/res/deepdoc/`（首次解析自动下载）
+- 特点：跑在 CPU、免费、不联网；只在**上传文档建库时**工作（这也是解析 PDF 吃 CPU/内存的原因）
+
+### 云端 API —— “大脑”，收费/联网
+| 能力 | 模型 | 服务 | 说明 |
+|------|------|------|------|
+| 对话生成 | `LLM_MODEL` | 任意 OpenAI 兼容服务 | 可自由替换（见下） |
+| 向量 Embedding | `text-embedding-v3` | 阿里云 DashScope | 建库+提问都用，维度 1024 |
+| 重排 Rerank | `gte-rerank` | 阿里云 DashScope（专有） | **只能用阿里云**，换别家需改代码 |
+
+### 推荐配置：对话用第三方，检索用阿里云
+代码已支持三类服务**独立配置**（`.env` 里）：
+
+```bash
+# 阿里云 DashScope：embedding + rerank 用（必填）
+DASHSCOPE_API_KEY=你的阿里云key
+DASHSCOPE_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+# 对话 LLM：任意 OpenAI 兼容服务（示例 apidock），不填则回退用 DASHSCOPE_*
+LLM_API_KEY=你的对话服务key
+LLM_BASE_URL=https://apidock.ai/v1
+LLM_MODEL=deepseek-r1
+
+# 向量 Embedding：默认回退用 DASHSCOPE_*；如需换服务再取消注释
+# EMBEDDING_API_KEY=
+# EMBEDDING_BASE_URL=
+# EMBEDDING_MODEL=text-embedding-v3
+```
+
+**换服务商注意：**
+- **对话 LLM**：改 `LLM_*` 三行即可，无需动代码。
+- **Embedding**：⚠️ 换了会改变向量维度，**必须删掉 ES 索引重建知识库**，否则检索失效。
+- **Rerank**：`gte-rerank` 是阿里专有接口，OpenAI 无对应标准；彻底弃用阿里云需改写 `rag/nlp/model.py` 的 `rerank_similarity()`（换 Jina/Cohere/BGE 或跳过）。
+
+> 结论：个人学习最省心的组合是 **对话=第三方（如 apidock），embedding/rerank=阿里云**——改动最小、无需重建知识库。
+
+---
+
 
 ## 一、前置准备（首次，务必先做）
 
@@ -40,9 +85,12 @@ cd swxy
 ```bash
 cd backend
 
-# 1) 生成 .env（从示例复制），填入你的 DashScope Key
+# 1) 生成 .env（从示例复制），填入 Key
 cp .env.example .env
-vim .env        # 修改 DASHSCOPE_API_KEY=你的key
+vim .env        # DASHSCOPE_API_KEY=阿里云key(embedding/rerank用)
+                # LLM_API_KEY=对话服务key(如 apidock)
+                # 详见上面「〇、模型服务架构」章节
+
 
 # 2) 构建并启动（首次 build 会装 opencv/onnxruntime，较慢，耐心等）
 docker compose up -d --build
