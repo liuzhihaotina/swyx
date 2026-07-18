@@ -1,0 +1,50 @@
+# nltk_data 精简策略：默认忽略全部（约 780MB 语料大多用不到），
+# 只保留代码实际用到的资源：
+#   - wordnet / omw-1.4：英文词形还原+同义词（synonym.py、rag_tokenizer.py）
+#   - punkt：英文分词 word_tokenize（rag_tokenizer.py）
+#   - stopwords / words：常用词表
+#   - averaged_perceptron_tagger：词性标注（部分流程依赖）
+# 这样 nltk_data 从 ~780MB 降到 ~60MB，可随仓库一起提交，服务器 clone 即用。
+
+# 1) 先忽略所有内容
+/*
+
+# 2) 再放行需要的目录与文件
+!.gitignore
+
+!corpora/
+corpora/*
+!corpora/wordnet.zip
+!corpora/wordnet.xml
+!corpora/omw-1.4.zip
+!corpora/omw-1.4.xml
+!corpora/omw-1.4/
+!corpora/stopwords.zip
+!corpora/stopwords.xml
+!corpora/stopwords/
+!corpora/words.zip
+!corpora/words.xml
+!corpora/words/
+
+!tokenizers/
+tokenizers/*
+!tokenizers/punkt.zip
+!tokenizers/punkt.xml
+!tokenizers/punkt/
+!tokenizers/punkt_tab.zip
+!tokenizers/punkt_tab.xml
+!tokenizers/punkt_tab/
+
+!taggers/
+taggers/*
+!taggers/averaged_perceptron_tagger.zip
+!taggers/averaged_perceptron_tagger.xml
+!taggers/averaged_perceptron_tagger/
+!taggers/averaged_perceptron_tagger_eng.zip
+!taggers/averaged_perceptron_tagger_eng.xml
+!taggers/averaged_perceptron_tagger_eng/
+!taggers/universal_tagset.zip
+!taggers/universal_tagset.xml
+!taggers/universal_tagset/
+
+!stemmers/
