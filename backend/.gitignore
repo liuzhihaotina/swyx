@@ -1,0 +1,12 @@
+# Python 缓存
+**/__pycache__/
+*.py[cod]
+
+# 真实密钥（用 .env.example 代替提交）
+.env
+
+# DeepDOC/OCR 大模型（首次解析自动从 hf-mirror 下载，见根目录 .gitignore）
+app/service/core/rag/res/deepdoc/*.onnx
+app/service/core/rag/res/deepdoc/*.model
+app/service/core/rag/res/deepdoc/.cache/
+app/service/core/rag/res/*.trie
