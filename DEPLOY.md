@@ -133,7 +133,52 @@ docker compose up -d --build
 
 ---
 
-## 六、常见问题
+## 六、离线服务器部署（无法联网的机器）
+
+如果目标服务器**不能联网**，DeepDOC 模型无法从 hf-mirror 自动下载，需要先在一台
+**有模型的联网机器**上打包，再拷到离线机还原。
+
+### 需要打包的本地资源（都在 backend/ 下）
+| 资源 | 路径 | 作用 |
+|------|------|------|
+| DeepDOC 模型 | `app/service/core/rag/res/deepdoc/`（det/rec/layout*/tsr.onnx + updown_concat_xgb.model） | OCR/版面/表格识别 |
+| 中文分词词典 | `app/service/core/rag/res/huqie.txt.trie`、`huqie.txt` | 中文分词 |
+| nltk 资源 | `nltk_data/` | 英文词形还原/分词 |
+
+> 这些默认被 .gitignore 排除，所以离线机只 `git clone` 是**拿不到**的，必须用下面的包补上。
+
+### 步骤 1：在联网机器上打包
+```bash
+# Windows（你的开发机）
+powershell -ExecutionPolicy Bypass -File scripts/pack-offline-assets.ps1
+#   → 生成 offline-assets.zip
+
+# 或 Linux 联网机
+bash scripts/pack-offline-assets.sh
+#   → 生成 offline-assets.tar.gz
+```
+
+### 步骤 2：拷贝到离线服务器
+把 `offline-assets.zip`（或 `.tar.gz`）用 U 盘/内网 scp 拷到离线服务器的**项目根目录**。
+
+### 步骤 3：在离线服务器还原
+```bash
+cd swxy
+bash scripts/restore-offline-assets.sh   # 自动解压到正确位置并校验
+```
+
+### 关于其他离线依赖
+- **Docker 镜像**：离线机也拉不到 `python:3.11.7-slim`、ES/PG/Redis 等基础镜像。
+  需在联网机 `docker pull` 后用 `docker save -o images.tar <镜像...>`，拷到离线机 `docker load -i images.tar`。
+- **Python 依赖**：Dockerfile 里 pip 装的包也需联网。离线可在联网机构建好整个后端镜像后
+  `docker save` 打包，离线机 `docker load` 直接用（推荐，一步到位）。
+- **云端 API**：对话/embedding/rerank 仍需访问 apidock / 阿里云。**完全离线的内网如果连这些也访问不了，
+  RAG 的问答与向量化将无法工作**——此时需改用可内网访问的模型服务（超出本项目默认范围）。
+
+---
+
+## 七、常见问题
+
 - **首次解析很慢**：在等 hf-mirror 下载 ONNX 模型，下载一次后缓存，后续正常。
 - **ES 起不来/退出**：多为内存不足，确认已挂 Swap；`docker logs gsk-es-01` 看具体报错。
 - **端口**：后端 8000，前端 80（Nginx）。记得在云服务器安全组放行。

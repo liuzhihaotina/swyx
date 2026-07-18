@@ -28,6 +28,11 @@ backend/app/service/core/rag/res/*.trie
 # ===== 教程视频（服务器用不到，太大）=====
 wsl启动rag项目/*.mp4
 
+# ===== 离线资源打包产物（由 scripts/pack-offline-assets 生成，不进 git）=====
+offline-assets.zip
+offline-assets.tar.gz
+
+
 # ===== 日志 / 系统文件 =====
 *.log
 .DS_Store
