@@ -39,3 +39,4 @@ offline-assets.tar.gz
 .idea/
 .vscode/*
 !.vscode/extensions.json
+.opencode
