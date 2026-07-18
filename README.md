@@ -10,6 +10,8 @@ docker compose up -d --build
 
 查看后端日志：docker logs -f swxy_api
 
+## 关闭后端服务
+docker compose down
 
 # 前端启动
 

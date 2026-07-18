@@ -6,6 +6,9 @@
 # ===== 依赖 / 构建产物 =====
 node_modules/
 **/node_modules/
+# backend 是 Python 项目，误生成的空 npm 锁文件不进 git
+backend/package-lock.json
+
 dist/
 dist-ssr/
 frontend/dist/
