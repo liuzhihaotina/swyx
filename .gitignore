@@ -42,4 +42,6 @@ offline-assets.tar.gz
 .idea/
 .vscode/*
 !.vscode/extensions.json
-.opencode
+# .opencode 是会话工作区（node_modules/快照等不入库），但 agent 定义需随仓库分发
+.opencode/*
+!.opencode/agent/
