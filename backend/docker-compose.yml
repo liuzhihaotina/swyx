@@ -19,17 +19,16 @@ services:
     env_file:
       - .env
     ports:
-      - "8000:8000"  # 只保留应用服务的端口映射
+      - "8000:8000"
     volumes:
       - ./app:/app/app
       - ./nltk_data:/usr/local/nltk_data
-    command: ["uvicorn", "app_main:app", "--host", "0.0.0.0", "--port", "8000"]
+    # 16C64G：4 个 worker 充分利用多核，每个 worker 独立处理 OCR/对话请求
+    command: ["uvicorn", "app_main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
     restart: unless-stopped
-    # 4G 内存友好：后端解析 PDF(DeepDOC OCR) 时会有峰值，给 2GB 上限，
-    # 配合宿主机 swap 防止偶发 OOM；单文档逐个上传，勿批量。
-    mem_limit: 2g
+    # 16C64G：单次 OCR 解析峰值约 2-4GB，4 workers 并发上限给 16GB
+    mem_limit: 16g
     depends_on:
-
       - gsk_pg
       - es01
       - redis
@@ -50,11 +49,14 @@ services:
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=false
       - xpack.security.transport.ssl.enabled=false
-      - cluster.routing.allocation.disk.watermark.low=5gb
-      - cluster.routing.allocation.disk.watermark.high=3gb
-      - cluster.routing.allocation.disk.watermark.flood_stage=2gb
+      # 16C64G 数据盘 200GB：water mark 放宽
+      - cluster.routing.allocation.disk.watermark.low=20gb
+      - cluster.routing.allocation.disk.watermark.high=10gb
+      - cluster.routing.allocation.disk.watermark.flood_stage=5gb
       - TZ=${TIMEZONE}
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # 16C64G：heap 4GB（ES 推荐不超过 32GB，4GB 对 RAG 检索已绰绰有余）
+      - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
+    # MEM_LIMIT 改为 8GB，见 .env
     mem_limit: ${MEM_LIMIT}
     ulimits:
       memlock:
@@ -80,8 +82,8 @@ services:
       - pg_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
-    # 4G 内存友好：Postgres 上限 512MB，个人学习量足够。
-    mem_limit: 512m
+    # 16C64G：给 PG 2GB，足以应对大量会话/消息记录
+    mem_limit: 2g
     networks:
       - gsk_network
 
@@ -90,10 +92,9 @@ services:
     image: redis:7-alpine
     volumes:
       - redis_data:/data
-    # 4G 内存友好：容器上限 256MB，并让 redis 自身在 200MB 时按 LRU 淘汰，
-    # 避免缓存无节制增长挤占内存。
-    command: ["redis-server", "--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru"]
-    mem_limit: 256m
+    # 16C64G：缓存上限 1GB，LRU 淘汰
+    command: ["redis-server", "--maxmemory", "1gb", "--maxmemory-policy", "allkeys-lru"]
+    mem_limit: 1536m
     restart: unless-stopped
     networks:
       - gsk_network

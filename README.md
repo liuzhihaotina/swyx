@@ -13,23 +13,28 @@ docker compose up -d --build
 ## 关闭后端服务
 docker compose down
 
-# 前端启动
+# 前端启动（生产模式，Nginx + 80端口）
 
 cd frontend
 
-## 删除旧文件
-rm -rf node_modules package-lock.json
+## 步骤1：修改.env文件中 VITE_API_BASE 为服务器公网IP
+VITE_API_BASE=http://1.13.176.5:8000
 
-## 重新安装依赖
-npm install
+## 构建并启动前端服务
+docker compose --profile prod up -d --build
 
-## 启动开发服务器
-npm run dev
+## 关闭前端服务
+docker compose --profile prod down
 
 # 访问服务
-http://localhost:5181/
+http://1.13.176.5/
 
+# 开发模式（可选，本地调试用）
+npm install && npm run dev   # http://localhost:5181/
 
+# 远程转发本地
+本地终端
+ssh rag-agent-dev
 
 
 
