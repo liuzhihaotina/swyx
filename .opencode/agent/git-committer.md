@@ -6,7 +6,7 @@ description: >-
 mode: subagent
 # 只做 git 核对与提交, 不写代码, 用便宜模型即可。
 # 切换模型只改这一行, 格式 provider/model-id; provider 在 opencode.json 的 provider 段定义。
-model: deepseek/deepseek-chat
+model: deepseek/deepseek-v4-pro
 temperature: 0.1
 tools:
   write: false
