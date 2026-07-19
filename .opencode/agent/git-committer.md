@@ -4,6 +4,9 @@ description: >-
   据此完成分类提交（Conventional Commits，英文 type 开头 + 中文描述）与推送。
   当需要把已完成的改动落库、或有人交接一份改动清单让你提交时使用。
 mode: subagent
+# 只做 git 核对与提交, 不写代码, 用便宜模型即可。
+# 切换模型只改这一行, 格式 provider/model-id; provider 在 opencode.json 的 provider 段定义。
+model: deepseek/deepseek-chat
 temperature: 0.1
 tools:
   write: false
