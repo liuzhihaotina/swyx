@@ -27,6 +27,32 @@
 若改动很小、不介意摘要进上下文，也可直接在派发消息里给出提交总结；
 甚至不给总结，让子代理直接依据 `git diff` 自行归纳分类。
 
+## 运维须知：改凭证 / agent 配置后需重启 serve
+
+**opencode serve 是常驻进程，仅在启动时加载一次凭证与 agent 配置，之后不重读。**
+因此下列改动**不会对正在运行的会话立即生效**，必须让 serve 重新加载：
+
+- provider 凭证：`~/.local/share/opencode/auth.json`（如 `opencode auth login` 或手动写入）
+- provider 配置：项目根 `opencode.json`（baseURL、模型列表等）
+- 子代理定义：`.opencode/agent/*.md`（尤其 frontmatter 的 `model:`）
+
+典型症状：改了以上内容后，子代理调用**返回空**或报 `AI_APICallError: Authorization Required`，
+且 opencode 日志里 `llm.model` 显示的仍是**旧模型**——即证明 serve 用的是启动时的缓存。
+
+让 serve 重新加载的方式（任选其一）：
+
+1. **IDE / GUI 扩展**：彻底关闭并重连窗口（VS Code Remote 下扩展宿主会重拉 serve）；
+   或找到 serve 进程 `kill` 掉，扩展会自动拉起新进程：
+   ```bash
+   ps -C opencode -o pid,lstart,cmd        # 找到 `opencode serve ...` 的 pid
+   kill <pid>                              # 扩展会自动重启 serve, 新进程加载最新配置
+   ```
+2. **终端 TUI**：退出 opencode 后重开。
+
+> 验证凭证/模型本身是否正确（绕开常驻 serve 的缓存），可用一次性新进程：
+> `opencode run --model deepseek/deepseek-v4-pro "只回复两个字：正常"`。
+> 若这条能正常返回、而 IDE 会话里仍失败，即可确认问题出在 serve 未重启，而非配置本身。
+
 ## 其他约定
 
 - `.opencode/` 为会话工作区，仅 `agent/` 目录随仓库分发，其余（node_modules、快照、
